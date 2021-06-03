@@ -1,4 +1,7 @@
-#Config file
+# Data
+raw_data/
+
+# Config file
 config.json
 
 # Env objects
