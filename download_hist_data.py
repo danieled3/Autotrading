@@ -10,7 +10,7 @@ import json
 import csv
 
 # Set final table name
-final_table_name = "raw_data"
+final_table_name = "df_1"
 
 # Load alpha_vantage API key from config file
 with open("config/config.json") as json_file:
@@ -71,4 +71,4 @@ for symbol in symbols:
 
     df_tot = pd.merge(df_tot, df_symbol, on='time', how='left')
 
-df_tot.to_csv('raw_data/raw_data.csv')
+df_tot.to_csv('raw_data/' + final_table_name + '.csv')

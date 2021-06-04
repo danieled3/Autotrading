@@ -1,5 +1,6 @@
 # Data
 raw_data/
+clear_data/
 
 # Config file
 config.json
