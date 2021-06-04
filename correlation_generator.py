@@ -5,30 +5,18 @@ import pandas as pd
 import numpy as np
 import scipy.stats
 
+# Set parameters
+last_day_to_consider = '2021-04-19'
 #Load raw data
-df = pd.read_csv('raw_data/raw_data.csv')
+raw_data = pd.read_csv('raw_data/raw_data.csv').iloc[:,2:]
 
-new_columns_list = []
-for column_name in df.columns:
-    if column_name.endswith('_x') or column_name.endswith('_y'):
-        column_name = column_name[0:-2]
-
-    new_columns_list = new_columns_list + [column_name]
-
-df.columns = new_columns_list  # rename columns
-df = df.drop(labels='Unnamed: 0', axis=1)  # drop row number
-
-# delete double columns
-for column_name in list(set(df.columns)):
-  if column_name.endswith('_delete'):
-    df = df.drop(labels=column_name,axis=1)
-
-df_final = df.dropna(axis=1,how='all')
-df_final = df_final[df_final.time<'2021-04-19']
-df_final = df_final.sort_values(by='time', axis=0, ascending=False)
-df_final = df_final.drop(axis=1, labels='time')
-df_final = df_final.dropna(axis=0,how='all')
-df_final = df_final.fillna(method='ffill', axis=0)
+#Clear data
+full_data = raw_data.dropna(axis=1,how='all') # drop completly empty columns
+full_data = full_data[full_data.time<last_day_to_consider] # drop most recent rows (they may be uncompleted)
+full_data = full_data.sort_values(by='time', axis=0, ascending=False) #sort values by time
+full_data = full_data.drop(axis=1, labels='time') #delete time column
+full_data = full_data.dropna(axis=0,how='all') #delete completly empty rows (bank holiday)
+full_data = full_data.fillna(method='ffill', axis=0) #fill empty spot with the value of the previous day
 
 def corr_offset(col1,col2,offset=0):
   if (offset == 0) :
@@ -38,18 +26,18 @@ def corr_offset(col1,col2,offset=0):
   return corr
 
 
-columns_name = df_final.columns
+columns_name = full_data.columns
 corr_table = pd.DataFrame(columns=['Symbol_1', 'Symbol_2', 'Offset', 'Correlation'])
 c1_i = 0
 c2_i = 0
 
 for column1_name in columns_name:
-    column1 = df_final[column1_name]
+    column1 = full_data[column1_name]
     column1_length = sum(~np.isnan(column1))  # length without null values
     c1_i = c1_i + 1
 
     for column2_name in columns_name:
-        column2 = df_final[column2_name]
+        column2 = full_data[column2_name]
         column2_length = sum(~np.isnan(column2))  # length without null values
         c2_i = c2_i + 1
         min_range = min(column1_length, column2_length)

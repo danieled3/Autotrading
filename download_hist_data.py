@@ -1,4 +1,4 @@
-# This code download 2 years of historical data of the 200 main stock index by using alpha_vantage
+# This code download 2 years of historical data of symbols in the configuration file and save output with a given name
 
 # Import libraries
 import pandas as pd
@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 import time
 import json
 import csv
+
+# Set final table name
+final_table_name = "raw_data"
 
 # Load alpha_vantage API key from config file
 with open("config/config.json") as json_file:
