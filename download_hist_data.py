@@ -9,10 +9,6 @@ import time
 import json
 import csv
 
-# Initialize parameters
-apiKey = None
-symbols = np.array([])
-
 # Load alpha_vantage API key from config file
 with open("config/config.json") as json_file:
     config_dict = json.load(json_file)
@@ -23,6 +19,7 @@ with open('config/indexes_to_consider.txt', 'r') as txt_file:
     reader = csv.reader(txt_file)
     for row in reader:
         symbols = np.append(symbols, row)
+symbols = list(set(symbols))  # delete multiple symbols
 
 # Initialize alpha_vantage object
 ts = TimeSeries(key=apiKey, output_format='csv')
@@ -59,19 +56,16 @@ for symbol in symbols:
             df['time'] = [t[0:10] for t in df.time]  # extract date from datetime
             df['volume'] = pd.to_numeric(df['volume'], errors='coerce')  # transform string into integer
             df = df[['time', 'close', 'volume']].groupby('time').agg(
-                {'close': ['first'], 'volume': ['sum']}).reset_index() # aggregate on day
+                {'close': ['first'], 'volume': ['sum']}).reset_index()  # aggregate on day
             df.columns = ['time', symbol + '_close', symbol + '_volume']  # rename columns
             df_symbol = df_symbol.append(df)  # append current df to full df_symbol
 
             if counter % 5 == 0:
-                print('I am waiting for the API to reaload...')
-                time.sleep(59)  # wait for API to reaload
+                print('I am waiting for the API to reload...')
+                time.sleep(59)  # wait for API to reload
 
             counter += 1
 
     df_tot = pd.merge(df_tot, df_symbol, on='time', how='left')
 
-df_tot.to_csv('raw_data/df_tot.csv')
-
-
-
+df_tot.to_csv('raw_data/raw_data.csv')
