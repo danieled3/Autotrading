@@ -1,4 +1,4 @@
-# This code download 2 years of historical data of symbols in the configuration file and save output with a given name
+# Download 2 years of historical data of symbols in the configuration file and save output with a given name
 
 # Import libraries
 import pandas as pd

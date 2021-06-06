@@ -1,4 +1,4 @@
-# Clear raw data and create correlation table
+# Clear raw data, save clean data and compute correlation for each couple of symbols with all time offset
 
 # Import libraries
 import pandas as pd
@@ -59,7 +59,7 @@ full_data = full_data.dropna(axis=0, how='all')  # delete completely empty rows 
 full_data = full_data.fillna(method='ffill', axis=0)  # fill empty spot with the value of the previous day
 
 # Save full data
-full_data.to_csv('clear_data/full_data.csv')
+full_data.to_csv('clean_data/full_data.csv', index=False)
 
 # Compute correlation table
 column_names = full_data.columns
@@ -95,17 +95,18 @@ for column1_name in close_names:  # iteration only on close columns (we do not w
 
         symbol1_array = np.concatenate((symbol1_array, symbol1_repeated))  # generate column values by repetition
         symbol2_array = np.concatenate((symbol2_array, symbol2_repeated))  # generate column values by repetition
-        offset_array = np.concatenate((offset_array, offset_range)) # the column value is a set of consecutive numbers
+        offset_array = np.concatenate((offset_array, offset_range))  # the column value is a set of consecutive numbers
 
         print('Index = ' + str(c1_i) + ' - Column1 = ' + column1_name)
         print('Index = ' + str(c2_i) + ' - Column2 = ' + column2_name)
         print('')
 
-        for offset in range(min_range - 2): # we do not consider correlation between 2-length array
+        for offset in range(min_range - 2):  # we do not consider correlation between 2-length array
             correlation = corr_offset(resized_column1, resized_column2, offset)
             correlation_array = np.append(correlation_array, correlation)
 
-    if len(symbol_list) == symbols_per_file: # Save a table every "symbol_per_file" rows to delete columns values and speed up computation
+    if len(symbol_list) == symbols_per_file:  # Save a table every "symbol_per_file" rows to delete columns values
+        # and speed up computation
         corr_table = pd.DataFrame({
             'Symbol_1': symbol1_array,
             'Symbol_2': symbol2_array,
@@ -114,7 +115,7 @@ for column1_name in close_names:  # iteration only on close columns (we do not w
         })
 
         output_name = '_'.join(symbol_list)
-        corr_table.to_csv('clean_data/corr_' + output_name + '.csv') # Use names of symbols as file name
+        corr_table.to_csv('clean_data/corr_' + output_name + '.csv')  # Use names of symbols as file name
 
         symbol1_array = np.array([])
         symbol2_array = np.array([])
