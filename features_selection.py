@@ -7,7 +7,7 @@ import numpy as np
 import pickle
 
 # Set minimum correlation needed for a feature to be considered
-min_corr = 0.85
+min_corr = 0.9
 
 # Load correlation table and offset table
 best_correlation_df = pd.read_csv('correlation_data/correlation.csv', index_col=0)
@@ -15,7 +15,7 @@ best_offset_df = pd.read_csv('correlation_data/offset.csv', index_col=0)
 symbol_names = best_correlation_df.columns
 
 # Create dictionary with best features, offsets and  importance for each symbol
-# best features: features with a correlation grater than min_corr
+# best features: features with a correlation grater than min_corr ORDERED BY CORRELATION VALUE
 # best_offset: corresponding offset of best features
 # average_corr: average correlation of the best features
 selected_features = {
@@ -29,6 +29,7 @@ selected_features = {
 for symbol in symbol_names:
     best_features = best_correlation_df[symbol][
         abs(best_correlation_df[symbol]) > min_corr]  # select the best features
+    best_features = best_features.reindex(best_features.abs().sort_values(ascending=False).index) # order by abs(corr)
     selected_features[symbol]['features'] = list(best_features.index)  # collect the best features name
     selected_features[symbol]['offset'] = list(
         best_offset_df[symbol][best_features.index])  # collect the best offset of the best features

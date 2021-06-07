@@ -5,8 +5,9 @@ import pandas as pd
 import numpy as np
 import os
 
-# Set minimum offset to consider (max prediction time)
-min_offset = 20
+# Set parameters
+min_offset = 20  # minimum offset to consider (max prediction time)
+max_offset = 240 # maximum offset to consider
 
 # Load full data
 full_data = pd.read_csv('clean_data/full_data.csv')
@@ -31,7 +32,7 @@ for table in symbols_corr_tables:
     print('Computing table ' + str(current_table_index) + ' of ' + str(number_of_tables) + '...')
     current_symbols_corr = pd.read_csv('clean_data/' + table)
     current_symbols_corr = current_symbols_corr[
-        np.logical_and(current_symbols_corr.Offset >= min_offset, current_symbols_corr.Offset <= 240)]
+        np.logical_and(current_symbols_corr.Offset >= min_offset, current_symbols_corr.Offset <= max_offset)]
     current_symbols_corr['Correlation'] = current_symbols_corr['Correlation'].fillna(0)
 
     for row in current_symbols_corr.itertuples():
