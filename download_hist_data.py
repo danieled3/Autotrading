@@ -8,16 +8,18 @@ from datetime import datetime, timedelta
 import time
 import json
 import csv
+import utils
 
 # Set final table name
-final_table_name = "df_1"
+final_table_name = "df_test"
 
 # Load alpha_vantage API key from config file
 with open("config/config.json") as json_file:
     config_dict = json.load(json_file)
     apiKey = config_dict["alpha_vantage_password"]
 
-# Load list of indexes to consider
+# Load list of symbols to consider
+symbols = np.array([])
 with open('config/indexes_to_consider.txt', 'r') as txt_file:
     reader = csv.reader(txt_file)
     for row in reader:
@@ -37,10 +39,10 @@ all_days = [(now - timedelta(i)).strftime("%Y-%m-%d") for i in range(0, 850) if
 # Initialize final DataFrame
 df_tot = pd.DataFrame(all_days, columns=['time'])
 
+# Download last 2 years data for each symbol
 counter = 1
 
-# Download last 2 years data for each symbol
-for symbol in symbols:
+for symbol in [symbols[1]]:
     print(symbol)
     df_symbol = pd.DataFrame(columns=['time', symbol + '_close', symbol + '_volume'])
 
@@ -48,19 +50,7 @@ for symbol in symbols:
         for month in months:
             print('Computation of year -' + str(year) + ' and month -' + str(month) + '...')
             slice = 'year' + str(year) + 'month' + str(month)
-
-            totalData = ts.get_intraday_extended(symbol=symbol, interval='60min', slice=slice)  # download the csv
-            df = pd.DataFrame(list(totalData[0]))  # csv --> dataframe
-
-            header_row = 0
-            df.columns = df.iloc[header_row]  # set column header
-            df = df.drop(header_row)
-            df = df.reset_index()
-            df['time'] = [t[0:10] for t in df.time]  # extract date from datetime
-            df['volume'] = pd.to_numeric(df['volume'], errors='coerce')  # transform string into integer
-            df = df[['time', 'close', 'volume']].groupby('time').agg(
-                {'close': ['first'], 'volume': ['sum']}).reset_index()  # aggregate on day
-            df.columns = ['time', symbol + '_close', symbol + '_volume']  # rename columns
+            df = utils.get_trading_data(ts, symbol, slice)
             df_symbol = df_symbol.append(df)  # append current df to full df_symbol
 
             if counter % 5 == 0:

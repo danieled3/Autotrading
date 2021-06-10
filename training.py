@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 import pickle
 
 # Select symbol to predict
@@ -14,8 +13,10 @@ symbol = 'TSLA_close'
 max_features_number = 60  # limit the max number of features to use, we can download a limited amount of
 # data because of API boundary
 train_split = 0.8
-days_to_predict = [5,10,15,20]
+days_to_predict = [5, 10, 15, 20]
 window_size = 3
+maximum_loss_admitted = 80
+patience = 300  # patience of the Early Stopping Checkout
 
 # Load best features and best offset list
 with open('features_selector_data/features_selector.p', 'rb') as fp:
@@ -65,15 +66,23 @@ for i in range(x_length - window_size):
 window_x = np.array(window_x)
 window_y = np.array(window_y)
 
-# Use the oldest values ofr training and the newest values for validation
+# Training-Validation split: we use the oldest values for training and the newest values for validation
 index_split = int(train_split * window_x.shape[0])
 x_train = window_x[:index_split, :, :]
 x_valid = window_x[index_split:, :, :]
 y_train = window_y[:index_split, :]
 y_valid = window_y[index_split:, :]
 
+# Model training
+optimizer = tf.keras.optimizers.Adam(lr=1e-5)
+checkpoint_cb = tf.keras.callbacks.ModelCheckpoint('models/' + symbol + '_4pred.h5', save_best_only=True)
+early_stopping_cb = tf.keras.callbacks.EarlyStopping(patience=300, restore_best_weights=True)
+
+# since model performances are very linked to selection of initial values, the model is trained
+# until it has a particular loss value
 go_on = True
-while (go_on):
+
+while go_on:
     model = tf.keras.models.Sequential([
         tf.keras.layers.Conv1D(filters=32, kernel_size=5,
                                strides=1, padding="causal",
@@ -88,30 +97,28 @@ while (go_on):
         tf.keras.layers.Lambda(lambda x: x * max(y))  # depends on data
     ])
 
-    optimizer = tf.keras.optimizers.Adam(lr=1e-5)
     model.compile(loss=tf.keras.losses.Huber(),
                   optimizer=optimizer,
                   metrics=["mae"])
-    checkpoint_cb = tf.keras.callbacks.ModelCheckpoint('models/' + symbol + '_4pred.h5', save_best_only=True)
-    early_stopping_cb = tf.keras.callbacks.EarlyStopping(patience=300, restore_best_weights=True)
 
     history = model.fit(
         x_train, y_train,
         validation_data=(x_valid, y_valid),
         epochs=5000,
-       callbacks=[checkpoint_cb, early_stopping_cb]
+        callbacks=[checkpoint_cb, early_stopping_cb]
     )
 
-    if  (history.history['val_mae'][-300] < 80):
+    if history.history['loss'][-patience] == maximum_loss_admitted:  # [-patience] is the minimum loss
         go_on = False
+
 
 # Plot training and validation loss
 loss = history.history['loss']
 val_loss = history.history['val_loss']
-epochs=range(len(loss)) # get number of epochs
+epochs = range(len(loss))  # get number of epochs
 
-plt.plot(epochs, loss, 'r', label = 'Training Loss')
-plt.plot(epochs, val_loss, 'b', label = 'Validation Loss')
+plt.plot(epochs, loss, 'r', label='Training Loss')
+plt.plot(epochs, val_loss, 'b', label='Validation Loss')
 plt.vlines(x=len(loss) - 300, ymin=0, ymax=600,  # add early stopping vertical line
            colors='green', ls=':', lw=2,
            label='Early stopping')
@@ -121,3 +128,15 @@ plt.ylabel("Loss")
 
 plt.legend()
 plt.figure()
+
+# Save model info
+model_info = {
+    'loss': history.history['loss'],
+    'val_loss': history.history['val_loss'],
+    'predicted_days': days_to_predict,
+    'window_size': window_size,
+    'max_features_number': max_features_number
+}
+
+with open('models/' + symbol + '_info.p', 'wb') as fp:
+    pickle.dump(model_info, fp)
