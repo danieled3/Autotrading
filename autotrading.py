@@ -6,10 +6,14 @@ import pandas as pd
 import numpy as np
 from alpha_vantage.timeseries import TimeSeries
 from datetime import datetime, timedelta
+from dateutil import relativedelta
+import time
 import pickle
 import tensorflow as tf
 import json
-import utils
+import my_utils
+import telegram
+import matplotlib.pyplot as plt
 
 # Select symbol
 symbol = 'TSLA_close'
@@ -18,16 +22,18 @@ symbol = 'TSLA_close'
 with open('models/' + symbol + '_info.p', 'rb') as fp:
     model_info = pickle.load(fp)
 days_to_predict = model_info['predicted_days']
-window_size=model_info['window_size']
+window_size = model_info['window_size']
 max_features_number = model_info['max_features_number']
 
-#Load model
-model = tf.keras.models.load_model('models/' + symbol + '_4pred.h5')
+# Load model
+model = tf.keras.models.load_model('models/' + symbol + '.h5')
 
 # Load alpha_vantage API key from config file
 with open("config/config.json") as json_file:
     config_dict = json.load(json_file)
     apiKey = config_dict["alpha_vantage_password"]
+    chat_id = config_dict["chat_id"]
+    token = config_dict["bot_token"]
 
 # Initialize alpha_vantage object
 ts = TimeSeries(key=apiKey, output_format='csv')
@@ -43,44 +49,183 @@ with open('features_selector_data/features_selector.p', 'rb') as fp:
 
 features = selected_features[symbol]['features']
 offsets = selected_features[symbol]['offset']
+symbol_only_name = symbol.split('_')[0]
 
-if max_features_number < len(features):  #consider only the features the model was trained with
+if max_features_number < len(features):  # consider only the features the model was trained with
     features = features[:max_features_number]
     offsets = offsets[:max_features_number]
 
-x= [None] * len(features)
+x = [None] * len(features)
+api_request_counter = 0
 
 # Load new data of each features
-for (i,feature) in enumerate(features):
+for (i, feature) in enumerate(features):
+    feature_only_name = feature.split('_')[0]
     offset = offsets[i]
-    days_needed = all_days[-offset:-offset-3]
-    months_slice = list(set([ for days in days_needed]))
-    year_slice = list(set([ for days in days_needed]))
+    needed_days = all_days[offset:offset + window_size]  # select the days that we want to download
+    print(needed_days)
 
+    # since the data we want may be in the previous or in the following "slice" we download data also
+    # for some days more
+    safe_bound = 2
+    needed_days_safe = all_days[offset - safe_bound:offset + window_size + safe_bound]
+    months_slice = list(set([relativedelta.relativedelta(now, datetime.strptime(day, '%Y-%m-%d')).months + 1 for day in
+                             needed_days_safe]))
+    years_slice = list(set([relativedelta.relativedelta(now, datetime.strptime(day, '%Y-%m-%d')).years + 1 for day in
+                            needed_days_safe]))
 
+    df_feature = pd.DataFrame(columns=['time', feature_only_name + '_close', feature_only_name + '_volume'])
 
-    df = utils.get_trading_data(ts, symbol, slice)
+    # Download all needed data
+    for year in years_slice:
+        for month in months_slice:
+            slice = 'year' + str(year) + 'month' + str(month)
+            df = my_utils.get_trading_data(ts, feature_only_name, slice)  # API call
+            api_request_counter += 1
+            df_feature = pd.concat([df_feature, df])  # add data
 
+    needed_values = np.array(df_feature[df_feature['time'].isin(needed_days)][feature])  # select only needed days
+    needed_values = needed_values.astype('float64')
+    needed_values[np.isnan(needed_values)] = np.mean(
+        needed_values)  # fill nan with the mean (there may be nans in bank holiday days)
+    x[i] = needed_values  # add values of this features to x list of array
 
+    if api_request_counter % 5 == 0:
+        time.sleep(59)  # wait for API to reload
 
+x = np.array(x)  # transform x into a numpy array
+prediction = model.predict(x)
 
+# TO DELETE
+prediction = 670
 
+# Load asset
+months_to_load = 8 # download last months of selected symbol
+df_current_symbol = pd.DataFrame(columns=['time', symbol])
 
+for month in range(months_to_load, 0, -1):
+    slice = 'year1month' + str(month)
+    if month % 4 == 0:  # start with sleep
+        time.sleep(59)
+    df = my_utils.get_trading_data(ts, symbol_only_name, slice)  # API call
+    df_current_symbol = pd.concat([df_current_symbol, df[['time', symbol]]])
 
-print('Computation of year -' + str(year) + ' and month -' + str(month) + '...')
-slice = 'year' + str(year) + 'month' + str(month)
+df_current_symbol = df_current_symbol.sort_values('time')
 
-totalData = ts.get_intraday_extended(symbol=symbol, interval='60min', slice=slice)  # download the csv
-df = pd.DataFrame(list(totalData[0]))  # csv --> dataframe
+# Load asset info
+portfolio = pd.read_csv('portfolio/portfolio.csv', index_col=False)
 
-header_row = 0
-df.columns = df.iloc[header_row]  # set column header
-df = df.drop(header_row)
-df = df.reset_index()
-df['time'] = [t[0:10] for t in df.time]  # extract date from datetime
-df['volume'] = pd.to_numeric(df['volume'], errors='coerce')  # transform string into integer
-df = df[['time', 'close', 'volume']].groupby('time').agg(
-    {'close': ['first'], 'volume': ['sum']}).reset_index()  # aggregate on day
-df.columns = ['time', symbol + '_close', symbol + '_volume']  # rename columns
-df_symbol = df_symbol.append(df)  # append current df to full df_symbol
+# Compute significant quantities
+long_average_days = 90
+short_average_days = 30
+time_array = np.array(df_current_symbol['time']).astype('object')
+series = np.array(df_current_symbol[symbol]).astype('float64')  # the first value is the oldest one
+long_averages = my_utils.moving_average(series, long_average_days)
+short_averages = my_utils.moving_average(series, short_average_days)
+long_average_dby = long_averages[-2]  # long average of the day before yesterday
+long_average_yesterday = long_averages[-1]  # long average of yesterday
+short_average_dby = short_averages[-2]  # long average of the day before yesterday
+short_average_yesterday = short_averages[-1]  # long average of yesterday
+yesterday_symbol_value = series[-1]
+liquid_value = portfolio[portfolio['Asset'] == 'Liquid']['Value'].iloc[0]
+asset_value = portfolio[portfolio['Asset'] == symbol_only_name]['Value'].iloc[0]
+new_liquid_value = liquid_value
+new_asset_value = asset_value
 
+# Start bot
+bot = telegram.Bot(token)
+text = 'Good evening! I am Trady, your personal trading assistant!'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+# Send info about current portfolio
+text = 'The current composition in euros of your portfolio is the following:'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+text = 'Liquid = ' + str(liquid_value) + ' euros'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+text = str(symbol_only_name) + ' = ' + str(asset_value * yesterday_symbol_value) + ' euros'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+# Send image of current portfolio
+objects = ('Liquid', symbol_only_name)
+y_pos = np.arange(len(objects))
+performance = [liquid_value, asset_value * yesterday_symbol_value]
+
+plt.figure(0)
+plt.barh(y_pos, performance, align='center', alpha=0.8)
+plt.yticks(y_pos, objects)
+plt.xlabel('Value (Euro)')
+plt.title('Your current PORTFOLIO')
+
+plt.savefig('charts/portfolio.png')
+bot.send_photo(chat_id, photo=open('charts/portfolio.png', 'rb'))
+
+time.sleep(5)
+
+# Send info about analyzed symbol
+text = 'The index I am analyzing is ' + symbol_only_name
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+text = 'The value of ' + symbol_only_name + ' in the last ' + str(months_to_load) + ' has been the following one:'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+# Send trend of analyzed symbol
+plt.figure(1)
+plt.plot(series, marker='o', markerfacecolor='blue', markersize=8, color='skyblue', linewidth=4, label=symbol)
+plt.plot(long_averages, marker='', color='red', linewidth=2, linestyle='dashed', label=symbol + ' long averages')
+plt.plot(short_averages, marker='', color='green', linewidth=2, linestyle='dashed', label=symbol + ' short averages')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.scatter(len(series) + days_to_predict[-1], prediction, edgecolors='red', label='Prediction')
+plt.legend()
+plt.grid()
+plt.show()
+plt.savefig('charts/' + symbol_only_name + '_trend.png')
+bot.send_photo(chat_id, photo=open('charts/' + symbol_only_name + '_trend.png', 'rb'))
+
+# Send the prediction value
+text = 'As you can see, I predict that the value of ' + symbol_only_name + ' in ' + str(days_to_predict[
+    -1]) + ' days will be ' + str(prediction)
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+time.sleep(5)
+
+# Buy when the shorter-term MA cross above the longer-term MA and the prediction value is higher
+
+if (long_average_dby > short_average_dby
+        and long_average_yesterday < short_average_yesterday
+        and yesterday_symbol_value < prediction
+):
+    if prediction > yesterday_symbol_value * 1.3:  # buy with 50% of liquid value
+        value_to_invest = int(liquid_value * 0.5)
+        text = 'Since the shorter-term MA crossed above the longer-term MA and my prediction is very high, I will buy ' \
+               + str(value_to_invest) + ' euros of ' + symbol_only_name + ' stocks!'
+    else:  # buy with 30% of liquid value
+        value_to_invest = int(liquid_value * 0.3)
+        text = 'Since the shorter-term MA crossed above the longer-term MA, I will buy ' + str(
+            value_to_invest) + ' euros of ' + symbol_only_name + ' stocks!'
+    new_asset_value = asset_value + value_to_invest / yesterday_symbol_value
+    new_liquid_value = liquid_value - value_to_invest
+
+elif (long_average_dby < short_average_dby
+      and long_average_yesterday > short_average_yesterday
+      and yesterday_symbol_value > prediction
+):
+    if (prediction < yesterday_symbol_value * 0.8):  # sell 100% of asset
+        value_to_sell = asset_value
+        text = 'Since the shorter-term MA crossed below the longer-term MA and my prediction is very low, I will sell ' \
+               + value_to_sell + ' ' + symbol_only_name + ' stocks!'
+    else:  # sell 75% of asset
+        value_to_sell = int(asset_value * 0.75)
+        text = 'Since the shorter-term MA crossed below the longer-term MA, I will sell ' + str(
+            value_to_sell) + ' ' + symbol_only_name + ' stocks!'
+    new_asset_value = asset_value - value_to_sell
+    new_liquid_value = liquid_value + value_to_sell * yesterday_symbol_value
+else:
+    text = 'Since the shorter-term MA is greatly different from longer-term MA, I would prefer to wait...'
+
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+text = 'Have a good day! See you tomorrow!'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)

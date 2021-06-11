@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import time
 import json
 import csv
-import utils
+import my_utils
 
 # Set final table name
 final_table_name = "df_test"
@@ -40,7 +40,7 @@ all_days = [(now - timedelta(i)).strftime("%Y-%m-%d") for i in range(0, 850) if
 df_tot = pd.DataFrame(all_days, columns=['time'])
 
 # Download last 2 years data for each symbol
-counter = 1
+api_request_counter = 1
 
 for symbol in [symbols[1]]:
     print(symbol)
@@ -50,14 +50,14 @@ for symbol in [symbols[1]]:
         for month in months:
             print('Computation of year -' + str(year) + ' and month -' + str(month) + '...')
             slice = 'year' + str(year) + 'month' + str(month)
-            df = utils.get_trading_data(ts, symbol, slice)
+            df = my_utils.get_trading_data(ts, symbol, slice)
             df_symbol = df_symbol.append(df)  # append current df to full df_symbol
 
-            if counter % 5 == 0:
+            if api_request_counter % 5 == 0:
                 print('I am waiting for the API to reload...')
                 time.sleep(59)  # wait for API to reload
 
-            counter += 1
+            api_request_counter += 1
 
     df_tot = pd.merge(df_tot, df_symbol, on='time', how='left')
 

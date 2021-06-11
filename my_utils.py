@@ -2,6 +2,7 @@
 
 # Import libraries
 import pandas as pd
+import numpy as np
 
 """Download close and volume data of a particular symbol in a particular period and return them as a DataFrame
 
@@ -26,3 +27,26 @@ def get_trading_data(ts, symbol, slice):
         {'close': ['first'], 'volume': ['sum']}).reset_index()  # aggregate on day
     df.columns = ['time', symbol + '_close', symbol + '_volume']  # rename columns
     return df
+
+
+"""Compute moving average of an array
+
+Arguments:
+    array: array to use 
+    window_size: number of past values to use to compute average 
+
+Return:
+    The numpy array with the moving averages"""
+
+def moving_average(array, window_size):
+    counter = 0
+    moving_averages = []
+    while counter < len(array):
+        if (counter - window_size + 1) < 0:
+            window_average = None
+        else:
+            this_window = array[counter - window_size + 1: counter + 1]
+            window_average = sum(this_window) / len(this_window)
+        moving_averages.append(window_average)
+        counter += 1
+    return np.array(moving_averages)
