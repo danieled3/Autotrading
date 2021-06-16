@@ -79,7 +79,7 @@ checkpoint_cb = tf.keras.callbacks.ModelCheckpoint('models/' + symbol + '.h5', s
 early_stopping_cb = tf.keras.callbacks.EarlyStopping(patience=300, restore_best_weights=True)
 
 # since model performances are very linked to selection of initial values, the model is trained
-# until it has a particular loss value
+# until its validation loss is sufficiently low
 go_on = True
 
 while go_on:
@@ -94,7 +94,7 @@ while go_on:
         tf.keras.layers.Dropout(0.1),
         tf.keras.layers.Dense(10, activation="relu"),
         tf.keras.layers.Dense(len(days_to_predict)),
-        tf.keras.layers.Lambda(lambda x: x * max(y))  # depends on data
+        tf.keras.layers.Lambda(lambda x: x * 600)  # speed up the convergence to optimum
     ])
 
     model.compile(loss=tf.keras.losses.Huber(),
@@ -108,7 +108,7 @@ while go_on:
         callbacks=[checkpoint_cb, early_stopping_cb]
     )
 
-    if history.history['val_mae'][-patience] < maximum_mae_admitted:  # [-patience] is the minimum loss
+    if history.history['val_mae'][-patience] < maximum_mae_admitted:  # [-patience] is the index of the minimum loss
         go_on = False
 
 

@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import pickle
 
-# Set minimum correlation needed for a feature to be considered
+# Set minimum correlation needed for a feature to be considered in the model
 min_corr = 0.9
 
 # Load correlation table and offset table

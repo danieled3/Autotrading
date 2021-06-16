@@ -33,7 +33,7 @@ ts = TimeSeries(key=apiKey, output_format='csv')
 years = list(range(2, 0, -1))
 months = list(range(12, 0, -1))
 now = datetime.now()  # current date and time
-all_days = [(now - timedelta(i)).strftime("%Y-%m-%d") for i in range(0, 850) if
+all_days = [(now - timedelta(i)).strftime("%Y-%m-%d") for i in range(0, 750) if
             (now - timedelta(i)).weekday() < 5]  # array of all days
 
 # Initialize final DataFrame

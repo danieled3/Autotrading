@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 import time
 import pickle
-import tensorflow as tf
+from tensorflow.keras.models import load_model
 import json
 import my_utils
 import telegram
@@ -26,14 +26,23 @@ window_size = model_info['window_size']
 max_features_number = model_info['max_features_number']
 
 # Load model
-model = tf.keras.models.load_model('models/' + symbol + '.h5')
+model = load_model('models/' + symbol + '.h5')
 
-# Load alpha_vantage API key from config file
+# Load alpha_vantage API key, token for telegram bot and chat id from config file
 with open("config/config.json") as json_file:
     config_dict = json.load(json_file)
     apiKey = config_dict["alpha_vantage_password"]
     chat_id = config_dict["chat_id"]
     token = config_dict["bot_token"]
+
+# Start bot
+bot = telegram.Bot(token)
+text = 'Good evening! I am Trady, your personal trading assistant!'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+
+text = 'I am analysing worldwide transactions to provide you the best advice. Please wait for 15-20 minutes...'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+bot.sendAnimation(chat_id, animation=open('charts/loading_data.gif', 'rb'))
 
 # Initialize alpha_vantage object
 ts = TimeSeries(key=apiKey, output_format='csv')
@@ -67,7 +76,7 @@ for (i, feature) in enumerate(features):
 
     # since the data we want may be in the previous or in the following "slice" we download data also
     # for some days more
-    safe_bound = 2
+    safe_bound = 3
     needed_days_safe = all_days[offset - safe_bound:offset + window_size + safe_bound]
     months_slice = list(set([relativedelta.relativedelta(now, datetime.strptime(day, '%Y-%m-%d')).months + 1 for day in
                              needed_days_safe]))
@@ -82,22 +91,26 @@ for (i, feature) in enumerate(features):
             slice = 'year' + str(year) + 'month' + str(month)
             df = my_utils.get_trading_data(ts, feature_only_name, slice)  # API call
             api_request_counter += 1
+            if api_request_counter % 5 == 0:
+                time.sleep(60)  # wait for API to reload
             df_feature = pd.concat([df_feature, df])  # add data
 
     needed_values = np.array(df_feature[df_feature['time'].isin(needed_days)][feature])  # select only needed days
+    if len(needed_values)==0:
+        needed_values = np.array([max(0,np.mean(df_feature[feature].astype('float64')))]) #use mean in case of not found value
     needed_values = needed_values.astype('float64')
-    needed_values[np.isnan(needed_values)] = np.mean(
-        needed_values)  # fill nan with the mean (there may be nans in bank holiday days)
+    while len(needed_values)<window_size: # fill empty values with the previous (there may be nans in bank holiday days)
+        needed_values = np.append(needed_values,needed_values[-1])
     x[i] = needed_values  # add values of this features to x list of array
 
-    if api_request_counter % 5 == 0:
-        time.sleep(59)  # wait for API to reload
-
 x = np.array(x)  # transform x into a numpy array
-prediction = model.predict(x)
+prediction = model.predict(x.T.reshape(1,window_size,len(features)))[0][0]
 
-# TO DELETE
-prediction = 670
+# Send another message
+text = 'I am almost done! Please just give me another 5 minutes...'
+bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
+bot.sendAnimation(chat_id, animation=open('charts/loading_data_2.gif', 'rb'))
+
 
 # Load asset
 months_to_load = 8 # download last months of selected symbol
@@ -132,19 +145,15 @@ asset_value = portfolio[portfolio['Asset'] == symbol_only_name]['Value'].iloc[0]
 new_liquid_value = liquid_value
 new_asset_value = asset_value
 
-# Start bot
-bot = telegram.Bot(token)
-text = 'Good evening! I am Trady, your personal trading assistant!'
-bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
 
 # Send info about current portfolio
-text = 'The current composition in euros of your portfolio is the following:'
+text = 'The current composition in dollars of your portfolio is the following:'
 bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
 
-text = 'Liquid = ' + str(liquid_value) + ' euros'
+text = 'Liquid = ' + str(liquid_value) + ' dollars'
 bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
 
-text = str(symbol_only_name) + ' = ' + str(asset_value * yesterday_symbol_value) + ' euros'
+text = str(symbol_only_name) + ' = ' + str(asset_value * yesterday_symbol_value) + ' dollars'
 bot.send_message(chat_id, text, parse_mode='markdown', disable_web_page_preview=True)
 
 # Send image of current portfolio
@@ -155,7 +164,7 @@ performance = [liquid_value, asset_value * yesterday_symbol_value]
 plt.figure(0)
 plt.barh(y_pos, performance, align='center', alpha=0.8)
 plt.yticks(y_pos, objects)
-plt.xlabel('Value (Euro)')
+plt.xlabel('Value (Dollars)')
 plt.title('Your current PORTFOLIO')
 
 plt.savefig('charts/portfolio.png')
