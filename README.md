@@ -22,6 +22,8 @@ In this project I built Trady. It is a chat-bot on Telegram that every day
 5. Using these data, decides wheter to wait or to buy/sell stocks
 6. Locally saves the new composition of the portfolio
 
+The bot works on long-term investments and for this reason it analyze only daily close and 
+
 ## Demo <a name="demo" />
 
 
@@ -31,11 +33,16 @@ I have always been interested in stock market because it is one of the most inte
 Moreover, I wanted to build something easy to use for non technical users. Because of that, I provided the outputs as Telegram messages and scheduled script to be automatically executed once a day. 
 
 ## Technical Aspect <a name="technical-aspects" />
-The main issue of this project was selection of features. I used a neural network model where feature selection is tipically non necessary. But in this case I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model on all data.
+The main issue of this project was selection of features. I used a neural network model where feature selection is tipically non necessary. But in this case I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model with all data. My approach consisted on computing the correlation between historical stock prices of a particular company and the historical stock prices of all of the other ones. Only the most correlated stocks prices are then been considered as features for model. 
 
-
+Every scripts has been fully parametrized. It allows to easily improve algorithm and scale it up to monitor and predict the priceces of the stocks of more companies at the same time and automatically implement a more complex trading strategy.
 
 ## Result <a name="result" />
+
+![image](https://user-images.githubusercontent.com/29163695/122837527-84fda280-d2f4-11eb-9173-6aac0217c509.png)
+
+
+
 The confusion matrixes obtained from the predictions of the 4 analyzed models are the following:
 
 <img src="https://user-images.githubusercontent.com/29163695/122113334-3fd3ff00-ce22-11eb-80e2-741cc13019e5.png" height="400">
