@@ -18,17 +18,18 @@
   
 ## Overview <a name="overview" />
 In this project I built Trady. He is a chat-bot on Telegram that every day
-1. Loads information about a portfolio of stocks and liquid dollars
+1. Loads information about a fake portfolio of stocks and liquid dollars
 2. Downloads updated stock market prices
 3. Uses an LSTM model to predict the future price of the stock of a selected company after a selected amount of time
 4. Computes the long term moving average and the short term moving average of the price of the stock of the selected company
 5. Using these data, decides wheter to wait or to buy/sell stocks
-6. Locally saves the new composition of the portfolio
+6. Locally saves the new composition of the fake portfolio
 
 Trady suggests only long-term investments so it analyze only daily closure prices. His strategy is based on his predictions and moving averages technique.
 
 ## Demo <a name="demo" />
 
+https://user-images.githubusercontent.com/29163695/123006138-8c39b480-d3b7-11eb-89e4-f5a49cf1b247.mp4
 
 ## Motivation <a name="motivation" />
 I have always been interested in stock market because it is one of the most interesting field to apply machine learning on. It offers a huge amount of free data, and very complex relations to infer. For this reason, non standard models and innovative idea are needed. Moreover, the better your models are, the more money you can directly earn.
@@ -36,31 +37,23 @@ I have always been interested in stock market because it is one of the most inte
 Moreover, I wanted to build something easy to use for non technical users. Because of that, I provided the outputs as Telegram messages and scheduled script to be automatically executed once a day. 
 
 ## Technical Aspect <a name="technical-aspects" />
-The main issue of this project was selection of features. I used a neural network model where feature selection is tipically non necessary. But in this case I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model with all data. My approach consisted on computing the correlation between historical stock prices of a particular company and the historical stock prices of all of the other ones. Only the most correlated stocks prices are then been considered as features for model. 
+The main issue of this project was the selection of features. I used a neural network model where feature selection is tipically non necessary. But in this case I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model with all data. My approach consisted on computing the correlation between historical stock prices of a particular company and the historical stock prices of all of the other ones. Only the most correlated stocks prices are then been considered as features for model. 
 
-Every scripts has been fully parametrized. It allows to easily improve algorithm and scale it up to monitor and predict the prices of the stocks of more companies at the same time and automatically implement a more satisfacing trading strategy.
+Every script has been fully parametrized. It allows to easily improve algorithm and scale it up to monitor and predict the prices of the stocks of more companies at the same time and automatically implement a more satisfacing trading strategy.
 
 ## Result <a name="result" />
 
-
+My first target was to test the performance of the model and in particular the hypotetical long-term earnings of investments suggested by Trady. I therefore built a model to predict only the value of Tesla stock prices (TSLA) in 20 working days. The model was trained only with the most correlated features. The following are the trends of loss functions in training phase:
 
 <img src="https://user-images.githubusercontent.com/29163695/122837527-84fda280-d2f4-11eb-9173-6aac0217c509.png" height="400">
 
+The MAE of the prodiction on the validation set is 46.3. By considering that Tesla stock prices is about 600 dollars and that the average of the stock price daily variation is 19.1 dollars, the performances of the model are pretty good. Moreover, on one hand the feature selection made through the correlations analysis allowed to reduce overfitting. On the other hand, the use of time shifted features and LSTM layers in NN allows to decrease underfitting.
+
+I noticed that the final value of loss function was strongly dependant on the choice of the inizial values of parameters of neural network. It was due to the fact that the loss function to minimize was very complex, so the optimizer got stuck into local minima. I tackled the problem by setting a decreasing learning rate and by training model more time with random choices of initial values of parameters.
 
 
+I have no feedback about the long-term earnings based on Trady strategy yet. I will update this section in 3-4 months with a complete review.
 
-The confusion matrixes obtained from the predictions of the 4 analyzed models are the following:
-
-<img src="https://user-images.githubusercontent.com/29163695/122113334-3fd3ff00-ce22-11eb-80e2-741cc13019e5.png" height="400">
-<img src="https://user-images.githubusercontent.com/29163695/122112158-d0114480-ce20-11eb-85b8-47b4912d23ca.png" height="400">
-
-<img src="https://user-images.githubusercontent.com/29163695/122112221-e0292400-ce20-11eb-8703-a550ec62404e.png" height="400">
-<img src="https://user-images.githubusercontent.com/29163695/122112292-f0d99a00-ce20-11eb-9e06-88a16a05e469.png" height="400">
-
-I noticed that:
-1. The classification model provides a higher accuracy even if some predictions are heavily wrong (i.e. a lot of "5" in place of "1" or vice versa). The MAE is the highest because classes are independent and sorting information is not used.
-2. Even if the regression models have the same complexity of the classification model, they do not provide so high accuracy. However, thanks to the optimization function used in the training phase, prediction errors are often lower.
-3. Both classification and regression models, even if they are very simple, allow reaching the same precision of a human being. It is a proof of the potential of LSTM layers and convolutional layers in neural networks.
 
 ## Technologies <a name="technologies" />
 I used *nltk* library for text preprocessing, *Tensorflow* for model building and *AWS Ground Truth* to make data classified by human beings.
@@ -71,7 +64,10 @@ I used *nltk* library for text preprocessing, *Tensorflow* for model building an
 
 
 ## To Do <a name="to-do" />
-* 
+* After some months of test, integrate it with a true Broker to make Trady work with real money.
+* Monitor the stocks of more companies at the same time.
+* Store data downloaded by stock API to avoid downloading old data more times and limit API costs.
+* Deploy the application on a cloud server i.e. GCP, AWS to easily schedule it, and save models. By exploiting the 
 
 ## File List <a name="file-list" />
 * **main.py** Data loading, data preprocessing, model training and model evaluation.
@@ -80,4 +76,4 @@ I used *nltk* library for text preprocessing, *Tensorflow* for model building an
 ## Credits <a name="credits" />
 * [Studio Envato](https://studio.envato.com/explore/caricatures-cartoon-design/133-mascot-and-character-design?per=1000) - Thanks for the avatar of Trady
 * [Investopedia](https://www.investopedia.com/articles/active-trading/052014/how-use-moving-average-buy-stocks.asp) - Thanks for explenation about moving averages technique
-* 
+* [Alpha Vantage](https://www.alphavantage.co/) Thanks for the almost free stock API
