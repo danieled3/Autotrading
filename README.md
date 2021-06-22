@@ -29,7 +29,12 @@ Trady suggests only long-term investments so it analyze only daily closure price
 
 ## Demo <a name="demo" />
 
+
+[![Everything Is AWESOME](https://user-images.githubusercontent.com/29163695/123008937-1e43bc00-d3bc-11eb-98ee-744287abbf41.png)](https://user-images.githubusercontent.com/29163695/123006138-8c39b480-d3b7-11eb-89e4-f5a49cf1b247.mp4)
+
+
 https://user-images.githubusercontent.com/29163695/123006138-8c39b480-d3b7-11eb-89e4-f5a49cf1b247.mp4
+
 
 ## Motivation <a name="motivation" />
 I have always been interested in stock market because it is one of the most interesting field to apply machine learning on. It offers a huge amount of free data, and very complex relations to infer. For this reason, non standard models and innovative idea are needed. Moreover, the better your models are, the more money you can directly earn.
