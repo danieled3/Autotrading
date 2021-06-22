@@ -1,5 +1,8 @@
 # Trady, your personal trading assistant!
 
+<img src="https://user-images.githubusercontent.com/29163695/122943420-4d840a00-d377-11eb-8bd4-d75d55a9aa28.png" height="150">
+
+
 ## Table of Content
   * [Overview](#overview)
   * [Demo](#demo)
@@ -14,7 +17,7 @@
 
   
 ## Overview <a name="overview" />
-In this project I built Trady. It is a chat-bot on Telegram that every day
+In this project I built Trady. He is a chat-bot on Telegram that every day
 1. Loads information about a portfolio of stocks and liquid dollars
 2. Downloads updated stock market prices
 3. Uses an LSTM model to predict the future price of the stock of a selected company after a selected amount of time
@@ -22,7 +25,7 @@ In this project I built Trady. It is a chat-bot on Telegram that every day
 5. Using these data, decides wheter to wait or to buy/sell stocks
 6. Locally saves the new composition of the portfolio
 
-The bot works on long-term investments and for this reason it analyze only daily close and 
+Trady suggests only long-term investments so it analyze only daily closure prices. His strategy is based on his predictions and moving averages technique.
 
 ## Demo <a name="demo" />
 
@@ -35,11 +38,14 @@ Moreover, I wanted to build something easy to use for non technical users. Becau
 ## Technical Aspect <a name="technical-aspects" />
 The main issue of this project was selection of features. I used a neural network model where feature selection is tipically non necessary. But in this case I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model with all data. My approach consisted on computing the correlation between historical stock prices of a particular company and the historical stock prices of all of the other ones. Only the most correlated stocks prices are then been considered as features for model. 
 
-Every scripts has been fully parametrized. It allows to easily improve algorithm and scale it up to monitor and predict the priceces of the stocks of more companies at the same time and automatically implement a more complex trading strategy.
+Every scripts has been fully parametrized. It allows to easily improve algorithm and scale it up to monitor and predict the prices of the stocks of more companies at the same time and automatically implement a more satisfacing trading strategy.
 
 ## Result <a name="result" />
 
-![image](https://user-images.githubusercontent.com/29163695/122837527-84fda280-d2f4-11eb-9173-6aac0217c509.png)
+
+
+<img src="https://user-images.githubusercontent.com/29163695/122837527-84fda280-d2f4-11eb-9173-6aac0217c509.png" height="400">
+
 
 
 
@@ -65,15 +71,13 @@ I used *nltk* library for text preprocessing, *Tensorflow* for model building an
 
 
 ## To Do <a name="to-do" />
-* Since the accuracy of the model is similar to the accuracy of a human classifier, we may try to create a model only for reviews of a particular kind of object to obtain better performance.
-* We may analyze full reviews and see whether performances improve or not.
-* We may train the model on the full dataset (the number of reviews to load has been limited to speed up model training)
+* 
 
 ## File List <a name="file-list" />
 * **main.py** Data loading, data preprocessing, model training and model evaluation.
 * **my_utils.py** Useful functions to load data and plot confusion matrixes
 
 ## Credits <a name="credits" />
-* [DTrimarchi10](https://github.com/DTrimarchi10) - Thanks for the confusion_matrix function I took inspiration from
-* [Hands-On Machine Learning with Scikit-Learn, Keras & Tensorflow](https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/) - Thansk of the authors of the book for the advice about model building
-* [Xiang Zhang](https://figshare.com/articles/dataset/Amazon_Reviews_Full/13232537/1) - Thanks for the complete dataset of Amazon reviews
+* [Studio Envato](https://studio.envato.com/explore/caricatures-cartoon-design/133-mascot-and-character-design?per=1000) - Thanks for the avatar of Trady
+* [Investopedia](https://www.investopedia.com/articles/active-trading/052014/how-use-moving-average-buy-stocks.asp) - Thanks for explenation about moving averages technique
+* 
