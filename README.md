@@ -1,4 +1,4 @@
-# Trady, your personal trading assistant!
+# Trady, your trading assistant!
 
 <img src="https://user-images.githubusercontent.com/29163695/122943420-4d840a00-d377-11eb-8bd4-d75d55a9aa28.png" height="150">
 
@@ -22,35 +22,35 @@ In this project I built Trady. He is a chat-bot on Telegram that every day
 2. Downloads updated stock market prices
 3. Uses an LSTM model to predict the future price of the stock of a selected company after a selected amount of time
 4. Computes the long term moving average and the short term moving average of the price of the stock of the selected company
-5. Using these data, decides wheter to wait or to buy/sell stocks
+5. Using these data, decides whether to wait or to buy/sell stocks
 6. Locally saves the new composition of the fake portfolio
 
-Trady suggests only long-term investments so it analyze only daily closure prices. His strategy is based on his predictions and moving averages technique.
+Trady suggests only long-term investments so it analyzes only daily closure prices. His strategy is based on his predictions and moving averages technique.
 
 ## Demo <a name="demo" />
 You can find Trady in action in the following video demo:
 
-[![Everything Is AWESOME](https://user-images.githubusercontent.com/29163695/123008937-1e43bc00-d3bc-11eb-98ee-744287abbf41.png)](https://user-images.githubusercontent.com/29163695/123006138-8c39b480-d3b7-11eb-89e4-f5a49cf1b247.mp4)
+[![Video Demo](https://user-images.githubusercontent.com/29163695/123008937-1e43bc00-d3bc-11eb-98ee-744287abbf41.png)](https://user-images.githubusercontent.com/29163695/123006138-8c39b480-d3b7-11eb-89e4-f5a49cf1b247.mp4)
 
 ## Motivation <a name="motivation" />
-I have always been interested in stock market because it is one of the most interesting field to apply machine learning on. It offers a huge amount of free data, and very complex relations to infer. For this reason, non standard models and innovative idea are needed. Moreover, the better your models are, the more money you can directly earn.
+I have always been interested in the stock market because it is one of the most interesting fields to apply machine learning on. It offers a huge amount of free data, and very complex relations to infer. For this reason, non-standard models and innovative idea are needed. Moreover, the better your models are, the more money you can directly earn.
 
-Moreover, I wanted to build something easy to use for non technical users. Because of that, I provided the outputs as Telegram messages and scheduled script to be automatically executed once a day. 
+Moreover, I wanted to build something easy to use for non-technical users. Because of that, I provided the outputs as Telegram messages and scheduled the script to be automatically executed once a day. 
 
 ## Technical Aspects <a name="technical-aspects" />
-The main issue of this project was the selection of features. I used a neural network model where feature selection is tipically non necessary. But in this case I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model with all data. My approach consisted on computing the correlation between historical stock prices of a particular company and the historical stock prices of all of the other ones. Only the most correlated stocks prices are then been considered as features for model. 
+The main issue of this project was the selection of features. I used a neural network model where feature selection is not typically necessary. But in this case, I had a huge amount of historical data so the model would have been prone to overfitting. Moreover, a lot of computational resources would have been needed to train the model with all data. My approach consisted of computing the correlation between the historical stock prices of a particular company and the historical stock prices of all of the other ones. Only the most correlated stocks prices are then been considered as features for the model. 
 
-Every script has been fully parametrized. It allows to easily improve algorithm and scale it up to monitor and predict the prices of the stocks of more companies at the same time and automatically implement a more satisfacing trading strategy.
+Every script has been fully parametrized. It allows to easily improve the algorithm and scale it up to monitor and predict the prices of the stocks of more companies at the same time and automatically implement a more satisfying trading strategy.
 
 ## Results <a name="result" />
 
-My first target was to test the performance of the model and in particular the hypotetical long-term earnings of investments suggested by Trady. I therefore built a model to predict only the value of Tesla stock prices (TSLA) in 20 working days. The model was trained only with the most correlated features. The following are the trends of loss functions in training phase:
+My first target was to test the performance of the model and in particular the hypothetical long-term earnings of investments suggested by Trady. I, therefore, built a model to predict only the value of Tesla stock prices (TSLA) in 20 working days. The model was trained only with the most correlated features. The following are the trends of loss functions in the training phase:
 
 <img src="https://user-images.githubusercontent.com/29163695/122837527-84fda280-d2f4-11eb-9173-6aac0217c509.png" height="400">
 
-The MAE of the prodiction on the validation set is 46.3. By considering that Tesla stock prices is about 600 dollars and that the average of the stock price daily variation is 19.1 dollars, the performances of the model are pretty good. Moreover, on one hand the feature selection made through the correlations analysis allowed to reduce overfitting. On the other hand, the use of time shifted features and LSTM layers in NN allows to decrease underfitting.
+The MAE of the prediction on the validation set is 46.3. By considering that Tesla stock price is about 600 dollars and that the average of the stock price daily variation is 19.1 dollars, the performances of the model are pretty good. Moreover, on one hand, the feature selection made through the correlations analysis allowed to reduce overfitting. On the other hand, the use of time-shifted features and LSTM layers in NN allowed to decrease underfitting.
 
-I noticed that the final value of loss function was strongly dependant on the choice of the inizial values of parameters of neural network. It was due to the fact that the loss function to minimize was very complex, so the optimizer got stuck into local minima. I tackled the problem by setting a decreasing learning rate and by training model more time with random choices of initial values of parameters.
+I noticed that the final value of the loss function was strongly dependant on the choice of the initial values of parameters of the neural network. It was because the loss function to minimize was very complex, so the optimizer got stuck into local minima. I tackled the problem by setting a decreasing learning rate and by training the model more times with random choices of initial values of parameters.
 
 
 I have no feedback about the long-term earnings based on Trady strategy yet. I will update this section in 3-4 months with a complete review.
@@ -76,15 +76,16 @@ Moreover, I used the software *Hitfilm Express* to create the previous video dem
 * Deploy the application on a cloud server i.e. GCP, AWS to easily schedule it, and save models. By using more computational power it would be also possible to create a model for each company.
 
 ## File List <a name="file-list" />
-* **download_hist_data.py** Data loading, data preprocessing, model training and model evaluation.
-* **data cleaning.py** Useful functions to load data and plot confusion matrixes
-* **corr_table_generator.py** Useful functions to load data and plot confusion matrixes
-* **features_selection.py** Useful functions to load data and plot confusion matrixes
-* **training.py** Useful functions to load data and plot confusion matrixes
-* **autotrading.py** Useful functions to load data and plot confusion matrixes
-* **my_utils.py** Useful functions to load data and plot confusion matrixes
+* **download_hist_data.py** Download 2 years of historical data for the list of symbols in the configuration file.
+* **data cleaning.py** Clear raw data, save clean data and compute correlation for each couple of symbols with all time offsets
+* **corr_table_generator.py** Compute correlation table where we can see, for each symbol, the most correlated symbols and the best time offset
+* **features_selection.py** Find for each symbol the most correlated features to use in the model
+* **training.py** Train a model for each symbol by using the best features and best offset.
+* **autotrading.py** Select one symbol, download new data about the needed features with the right offset, make predictions and
+simulate investment. This script is the only one that has to be daily scheduled.
+* **my_utils.py** Useful functions to load data and compute moving average
 
 ## Credits <a name="credits" />
 * [Studio Envato](https://studio.envato.com/explore/caricatures-cartoon-design/133-mascot-and-character-design?per=1000) - Thanks for the avatar of Trady
-* [Investopedia](https://www.investopedia.com/articles/active-trading/052014/how-use-moving-average-buy-stocks.asp) - Thanks for explenation about moving averages technique
+* [Investopedia](https://www.investopedia.com/articles/active-trading/052014/how-use-moving-average-buy-stocks.asp) - Thanks for the explanation about the moving averages technique
 
