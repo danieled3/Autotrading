@@ -17,7 +17,7 @@
 
   
 ## Overview <a name="overview" />
-In this project I built Trady. He is a chat-bot on Telegram that every day
+In this project I built Trady. He is a chatbot on Telegram that every day
 1. Loads information about a fake portfolio of stocks and liquid dollars
 2. Downloads updated stock market prices
 3. Uses an LSTM model to predict the future price of the stock of a selected company after a selected amount of time
